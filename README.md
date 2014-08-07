@@ -1,18 +1,22 @@
-# httparty
+# httsoiree
 
-Makes http fun again!
+Like HTTParty, just a little less in your face.
 
 ## Install
 
 ```
-gem install httparty
+gem install httsoiree
 ```
 
 ## Requirements
 
 * Ruby 1.9.3 or higher
 * multi_xml
-* You like to party!
+* You like to converse with friends, perhaps over drinks.
+
+## Usage
+
+A drop-in replacement to HTTParty - you can even keep typing HTTParty. Or, if you prefer, you can HTTSoiree.
 
 ## Examples
 
