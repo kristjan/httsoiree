@@ -40,6 +40,7 @@ module HTTParty
         parser: Parser,
         connection_adapter: ConnectionAdapter
       }.merge(o)
+      set_basic_auth_from_uri
     end
 
     def path=(uri)
@@ -55,6 +56,10 @@ module HTTParty
     end
 
     def uri
+      if redirect && path.relative? && path.path[0] != "/"
+        path.path = @last_uri.path.gsub(/[^\/]+$/, "") + path.path
+      end
+
       new_uri = path.relative? ? URI.parse("#{base_uri}#{path}") : path.clone
 
       # avoid double query string on redirects [#12]
@@ -95,7 +100,7 @@ module HTTParty
           chunks = []
 
           http_response.read_body do |fragment|
-            chunks << fragment
+            chunks << fragment unless options[:stream_body]
             block.call(fragment)
           end
 
@@ -334,6 +339,13 @@ module HTTParty
 
     def post?
       Net::HTTP::Post == http_method
+    end
+
+    def set_basic_auth_from_uri
+      if path.userinfo
+        username, password = path.userinfo.split(':')
+        options[:basic_auth] = {:username => username, :password => password}
+      end
     end
   end
 end

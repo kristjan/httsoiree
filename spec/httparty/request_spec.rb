@@ -56,6 +56,23 @@ describe HTTParty::Request do
       request = HTTParty::Request.new(Net::HTTP::Get, 'http://google.com', connection_adapter: my_adapter)
       request.connection_adapter.should == my_adapter
     end
+
+    context "when basic authentication credentials provided in uri" do
+      context "when basic auth options wasn't set explicitly" do
+        it "sets basic auth from uri" do
+          request = HTTParty::Request.new(Net::HTTP::Get, 'http://user1:pass1@example.com')
+          request.options[:basic_auth].should == {:username => 'user1', :password => 'pass1'}
+        end
+      end
+
+      context "when basic auth options was set explicitly" do
+        it "uses basic auth from url anyway" do
+          basic_auth = {:username => 'user2', :password => 'pass2'}
+          request = HTTParty::Request.new(Net::HTTP::Get, 'http://user1:pass1@example.com', :basic_auth => basic_auth)
+          request.options[:basic_auth].should == {:username => 'user1', :password => 'pass1'}
+        end
+      end
+    end
   end
 
   describe "#format" do
@@ -127,6 +144,32 @@ describe HTTParty::Request do
   end
 
   describe "#uri" do
+    context "redirects" do
+      it "returns correct path when the server sets the location header to a filename" do
+        @request.last_uri = URI.parse("http://example.com/foo/bar")
+        @request.path = URI.parse("bar?foo=bar")
+        @request.redirect = true
+
+        @request.uri.should == URI.parse("http://example.com/foo/bar?foo=bar")
+      end
+
+      it "returns correct path when the server sets the location header to an absolute path" do
+        @request.last_uri = URI.parse("http://example.com/foo/bar")
+        @request.path = URI.parse("/bar?foo=bar")
+        @request.redirect = true
+
+        @request.uri.should == URI.parse("http://example.com/bar?foo=bar")
+      end
+
+      it "returns correct path when the server sets the location header to a full uri" do
+        @request.last_uri = URI.parse("http://example.com/foo/bar")
+        @request.path = URI.parse("http://example.com/bar?foo=bar")
+        @request.redirect = true
+
+        @request.uri.should == URI.parse("http://example.com/bar?foo=bar")
+      end
+    end
+
     context "query strings" do
       it "does not add an empty query string when default_params are blank" do
         @request.options[:default_params] = {}
@@ -345,7 +388,6 @@ describe HTTParty::Request do
         resp.body.encoding.should == "Content".encoding
       end
     end
-
 
     describe 'with non-200 responses' do
       context "3xx responses" do
